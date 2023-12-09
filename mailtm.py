@@ -27,7 +27,7 @@ def _make_mailtm_request(request_fn, timeout = 600):
         time.sleep(1.0)
     
     if error is not None:
-        raise MailTmError(e) from e
+        raise MailTmError(error) from error
     if status_code is not None:
         raise MailTmError(f"Status code: {status_code}")
     if time.monotonic() - tstart >= timeout:

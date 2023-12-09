@@ -1,0 +1,7 @@
+aio-msgpack-rpc
+certifi
+charset-normalizer
+idna
+msgpack
+requests
+urllib3
