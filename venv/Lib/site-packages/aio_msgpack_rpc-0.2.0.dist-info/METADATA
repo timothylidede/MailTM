@@ -1,0 +1,98 @@
+Metadata-Version: 2.1
+Name: aio-msgpack-rpc
+Version: 0.2.0
+Summary: asyncio MsgPack RPC
+Home-page: https://gitlab.com/rmcgregor/aio-msgpack-rpc
+Author: Robert Mcgregor
+Author-email: rmcgregor1990@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Framework :: AsyncIO
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: msgpack
+Provides-Extra: test
+Requires-Dist: pytest ; extra == 'test'
+Requires-Dist: pytest-asyncio ; extra == 'test'
+Requires-Dist: asyncio-extras ; extra == 'test'
+
+# aio-msgpack-rpc
+[![pipeline status](https://gitlab.com/rmcgregor/aio-msgpack-rpc/badges/master/pipeline.svg)](https://gitlab.com/rmcgregor/aio-msgpack-rpc/commits/master)
+[![coverage report](https://gitlab.com/rmcgregor/aio-msgpack-rpc/badges/master/coverage.svg)](https://rmcgregor.gitlab.io/aio-msgpack-rpc/coverage)
+
+Pure asyncio implementation of the [MsgPack RPC](https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md).  
+Requires Python >= 3.6.  
+Uses [streams](https://docs.python.org/3/library/asyncio-stream.html) API provided by the ```asyncio``` standard library.
+
+Just a simple implementation of the RPC layer.
+
+## Installation
+```
+pip install aio-msgpack-rpc
+```
+## Example
+### Server
+```python
+import asyncio
+import aio_msgpack_rpc
+
+
+# handlers can be defined on a class
+# they can either be async or plain functions
+class MyServicer:
+    async def sum(self, x, y):
+        print(f"sum: {x}, {y}")
+        return x + y
+
+    def notification(self, msg):
+        print(f"notification: {msg}")
+
+
+async def main():
+    try:
+        server = await asyncio.start_server(aio_msgpack_rpc.Server(MyServicer()), host="localhost", port=18002)
+
+        while True:
+            await asyncio.sleep(0.1)
+    finally:
+        server.close()
+
+try:
+    asyncio.get_event_loop().run_until_complete(main())
+except KeyboardInterrupt:
+    pass
+```
+
+### Client
+```python
+import asyncio
+import aio_msgpack_rpc
+
+async def main():
+    client = aio_msgpack_rpc.Client(*await asyncio.open_connection("localhost", 18002))
+
+    # blocking rpc calls
+    result = await client.call("sum", 1, 2)
+    assert result == 3
+
+    # one way notifications
+    await client.notify("notification", "hello")
+
+asyncio.get_event_loop().run_until_complete(main())
+```
+
+### Benchmark
+Some basic performance benchmarks against the official implementation on my development machine.
+
+| package       | call (QPS)   | notify (QPS)  |
+| ------------- |:-------------:| -----:|
+| msgpack-rpc-python | 5414 | 11746 |
+| aio-msgpack-rpc | 5781  | 86957 |
+
+
